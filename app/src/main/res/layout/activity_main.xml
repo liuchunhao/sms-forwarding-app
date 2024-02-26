@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:visibility="visible"
+    tools:visibility="visible">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+        <!--
+        <TextView
+            android:id="@+id/textViewApi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API" />
+
+-->
+
+        <EditText
+            android:id="@+id/editText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:ems="10"
+            android:hint=" Phone No."
+            android:inputType="text"
+            tools:ignore="LabelFor" />
+
+        <EditText
+            android:id="@+id/editTextApi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="10dp"
+            android:ems="10"
+            android:hint="API endpoint"
+            android:inputType="textPersonName"
+            tools:ignore="LabelFor" />
+
+    </LinearLayout>
+
+    <Switch
+        android:id="@+id/switchNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Notification"
+        android:textColorHighlight="#FFC400"
+        android:textColorLink="#FFC400"
+        app:layout_column="1"
+        app:layout_row="1" />
+
+    <Switch
+        android:id="@+id/switchEnabled"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enabled" />
+
+    <Button
+        android:id="@+id/buttonResend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:textColor="@android:color/white"
+        android:onClick="sendMessage"
+        android:text="@string/main_btn_start" />
+
+</LinearLayout>
+
