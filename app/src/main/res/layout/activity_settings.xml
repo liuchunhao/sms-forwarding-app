@@ -11,24 +11,30 @@
         android:id="@+id/textView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/settings_title" />
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="10dp"
+        android:hint="Settings" />
 
     <EditText
         android:id="@+id/editText"
-        android:layout_width="50pt"
-        android:layout_height="100pt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="10dp"
+        android:autofillHints=""
         android:ems="10"
         android:inputType="text"
-        android:autofillHints=""
         android:text="@string/settings_url"
         tools:ignore="LabelFor" />
 
     <Button
         android:id="@+id/buttonResend"
-        android:layout_width="150pt"
-        android:layout_height="30pt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="10dp"
+        android:background="#00FF00"
         android:onClick="SaveSettings"
-        android:text="Save"
-        android:background="#00FF00" />
+        android:text="Save" />
 
 </LinearLayout>

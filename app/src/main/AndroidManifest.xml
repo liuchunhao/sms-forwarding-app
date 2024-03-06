@@ -7,6 +7,7 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
 
     <!-- User internet to send Post request -->
@@ -14,6 +15,17 @@
 
     <!-- User network state to check if internet is available -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- It's often used for services or tasks that need to continue running even when the device's screen is off,
+         such as background tasks, ongoing downloads, or keeping a CPU awake to process data -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Use phone state to get phone number -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Read mobile numbers -->
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+
+
 
     <!--
         cannot be used in Android 11+
@@ -44,6 +56,7 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
 
         <activity
             android:name=".MainActivity"

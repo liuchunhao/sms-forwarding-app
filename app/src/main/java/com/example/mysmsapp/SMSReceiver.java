@@ -14,7 +14,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.HashMap;
 import java.util.Objects;
 
 import okhttp3.Call;
@@ -24,6 +23,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class SMSReceiver extends BroadcastReceiver {
 
@@ -37,16 +37,15 @@ public class SMSReceiver extends BroadcastReceiver {
         assert smsObj != null;
         for (Object obj : smsObj) {
             SmsMessage message = SmsMessage.createFromPdu((byte[]) obj);
-            String mobNo = message.getDisplayOriginatingAddress();
+            String from = message.getDisplayOriginatingAddress();
             String msg = message.getDisplayMessageBody();
-            Log.d("SMSReceiver", "onReceive: " + mobNo + " " + msg);
 
-            if(msg.contains("Your Exness verification code is:")) {
+            Log.i("SMSReceiver", "onReceive: " + from + " " + msg);
+
+            if(msg.contains("Exness")) {
                 /* Your Exness verification code is: 146394 */
-                String[] arr = msg.split(":");
-                String verificationCode = arr[1].trim();
-                display(context, mobNo, msg);
-                sendPostRequest(mobNo, msg, verificationCode);
+                display(context, from, msg);
+                sendPostRequest(from, msg);
             }
         }
     }
@@ -54,7 +53,7 @@ public class SMSReceiver extends BroadcastReceiver {
     private void displaySMS(Context context, String mobNo, String msg) {
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.putExtra("mobNo", mobNo);
+        intent.putExtra("from", mobNo);
         intent.putExtra("msg", msg);
         context.startActivity(intent);
     }
@@ -62,12 +61,12 @@ public class SMSReceiver extends BroadcastReceiver {
     /**
      * This method is used to display the SMS on the MainActivity
      * @param context Context
-     * @param mobNo String
+     * @param from String
      * @param msg String
      */
-    private void display(Context context, String mobNo, String msg) {
+    private void display(Context context, String from, String msg) {
         MainActivity inst = MainActivity.instance;
-        inst.setTextView(mobNo, msg);
+        inst.setTextView(from, msg);
     }
 
     private final OkHttpClient client = new OkHttpClient();
@@ -76,45 +75,49 @@ public class SMSReceiver extends BroadcastReceiver {
      *  you cannot access localhost from your mobile device, so you need to use ngrok to expose your localhost to the internet
      *  ngrok http 5000 -> https://2ac5-123-193-85-198.ngrok-free.app
      */
-    private final static String URL = "https://2ac5-123-193-85-198.ngrok-free.app/sms";
 
-    private void sendPostRequest(String from, String msg, String verificationCode) {
-        JSONObject jsonObject = new JSONObject();
-        String timestamp = DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
+    private final static String URL = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000/api/v1/exness/sms";
+
+    private void sendPostRequest(String from, String msg) {
         try {
+            JSONObject jsonObject = new JSONObject();
+            String timestamp = DateFormat.getDateTimeInstance().format(System.currentTimeMillis());
             jsonObject.put("timestamp", timestamp);
-            jsonObject.put("from", from);
+            jsonObject.put("mobile", from);
             jsonObject.put("msg", msg);
-            JSONObject data = new JSONObject();
-            data.put("verificationCode", verificationCode);
-            jsonObject.put("data", data);
+
+            RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObject.toString());
+
+            Request request = new Request.Builder()
+                    .url(URL)
+                    .post(requestBody)
+                    .build();
+            client.newCall(request).enqueue(new Callback() {
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if(response.isSuccessful()) {
+                        // only allowed to read once from the response
+                        String msg = Objects.requireNonNull(response.body()).string();
+                        Log.e("SMSReceiver", "onResponse: " + msg);
+                        // This is the response from the server after sending the POST request, show it in the MainActivity
+                        display(null, URL, msg);
+                    } else {
+                        display(null, URL, "Failed to send the SMS");
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    Log.e("SMSReceiver", "onFailure: " + e.getMessage(), e);
+                    String msg = e.getMessage();
+                    display(null, URL, msg);
+                }
+            });
         } catch (Exception e) {
             Log.e("SMSReceiver", "sendPostRequest: " + e.getMessage(), e);
+            display(null, URL, e.getMessage());
         }
-
-        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonObject.toString());
-
-        Request request = new Request.Builder()
-                .url(URL)
-                .post(requestBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if(!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                } else {
-                    Log.d("SMSReceiver", "onResponse: " + Objects.requireNonNull(response.body()).string());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.e("SMSReceiver", "onFailure: " + e.getMessage(), e);
-            }
-        });
     }
 
 }
