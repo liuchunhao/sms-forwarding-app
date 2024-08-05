@@ -63,12 +63,7 @@ class ApiService : Service() {
     }
 
     private fun createNotification(): android.app.Notification {
-        val channelId =
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                createNotificationChannel()
-            } else {
-                ""
-            }
+        val channelId = createNotificationChannel()
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(

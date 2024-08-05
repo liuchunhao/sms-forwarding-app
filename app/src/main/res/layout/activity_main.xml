@@ -14,104 +14,120 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/editText"
+        <TextView
+            android:id="@+id/textViewPhoneNo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="10dp"
             android:layout_marginHorizontal="10dp"
-            android:autofillHints=""
-            android:ems="10"
-            android:hint="Phone No."
-            android:inputType="text"
-            tools:ignore="LabelFor" />
+            android:layout_marginVertical="10dp"
+            android:background="@drawable/rectangle_drawable"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/editTextApi"
+        <TextView
+            android:id="@+id/textViewApiEndpoint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="10dp"
             android:layout_marginHorizontal="10dp"
-            android:ems="10"
-            android:hint="API endpoint"
-            android:inputType="textPersonName"
-            tools:ignore="LabelFor" />
+            android:layout_marginVertical="10dp"
+            android:background="@drawable/rectangle_drawable"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
-    <Switch
-        android:id="@+id/switchNotification"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="10dp"
-        android:layout_marginHorizontal="10dp"
-        android:textColorHighlight="#FFC400"
-        android:textColorLink="#FFC400"
-        app:layout_column="1"
-        app:layout_row="1"
-        android:text="Notification" />
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
 
-    <Switch
-        android:id="@+id/switchEnabled"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginVertical="10dp"
-        android:text="Mute" />
+            <TableRow
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent" >
 
-    <Button
-        android:id="@+id/buttonSend"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginVertical="10dp"
-        android:background="#FFFFFF"
-        android:onClick="sendMessage"
-        android:text="@string/main_btn_send"
-        android:textColor="@android:color/white"
-        android:visibility="visible"
-        tools:visibility="visible" />
+                <Switch
+                    android:id="@+id/switchNotification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="10dp"
+                    android:layout_marginVertical="10dp"
+                    android:text="@string/notification"
+                    android:textColorHighlight="#FFC400"
+                    android:textColorLink="#FFC400"
+                    app:layout_column="1"
+                    app:layout_row="1"
+                    tools:ignore="UseSwitchCompatOrMaterialXml" />
 
-    <Button
-        android:id="@+id/buttonSettings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginVertical="10dp"
-        android:background="#FFFFFF"
-        android:onClick="sendMessage"
-        android:text="@string/main_btn_settings"
-        android:textColor="@android:color/white"
-        android:visibility="visible"
-        android:clickable="false"
-        tools:visibility="visible" />
+                <Switch
+                    android:id="@+id/switchMute"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="10dp"
+                    android:layout_marginVertical="10dp"
+                    android:text="@string/mute"
+                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+                <Button
+                    android:id="@+id/buttonSettings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="10dp"
+                    android:layout_marginVertical="10dp"
+                    android:background="@color/white"
+                    android:onClick="sendMessage"
+                    android:text="@string/main_btn_settings"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="visible"
+                    tools:visibility="visible" />
+
+
+            </TableRow>
+
+        <Button
+            android:id="@+id/buttonSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginVertical="10dp"
+            android:background="@color/white"
+            android:onClick="sendMessage"
+            android:text="@string/main_btn_send"
+            android:textColor="@android:color/darker_gray"
+            android:visibility="visible"
+            tools:visibility="visible" />
+
+
+    </TableLayout>
+
 
     <TextView
-        android:background="@drawable/rectangle_drawable"
         android:id="@+id/textView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="10dp"
+        android:layout_height="200dp"
         android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="10dp"
+        android:background="@drawable/rectangle_drawable"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+
+    <TextView
+        android:id="@+id/textViewLogging"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="10dp"
+        android:background="@drawable/rectangle_drawable"
         android:textSize="12sp"
         android:textStyle="bold" />
 
     <!-- Add ListView
 
-    <ListView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     -->
 
-    <TextView
-        android:background="@drawable/rectangle_drawable"
-        android:id="@+id/textViewResponse"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="10dp"
-        android:layout_marginHorizontal="10dp"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+
 </LinearLayout>
 

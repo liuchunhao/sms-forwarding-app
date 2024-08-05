@@ -1,7 +1,6 @@
 package com.example.mysmsapp
 
 import android.Manifest
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -23,30 +22,42 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import com.example.mysmsapp.databinding.ActivityMainBinding
 import com.example.mysmsapp.service.ApiService
+import com.example.mysmsapp.service.HeartbeatWorker
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
-class MainActivity : AppCompatActivity () , View.OnClickListener {
+
+class MainActivity : AppCompatActivity() {
 
     companion object {
         lateinit var instance: MainActivity
     }
 
-    // how to get phone number of this device
-    // https://stackoverflow.com/questions/2480288/programmatically-obtain-the-phone-number-of-the-android-phone
+    /* How to get phone number of this device
+        - https://stackoverflow.com/questions/2480288/programmatically-obtain-the-phone-number-of-the-android-phone
 
-    var tMgr: TelephonyManager? = null
-    var mPhoneNumber: String? = null
+     */
+
+    private var tMgr: TelephonyManager? = null
+    private var mPhoneNumber: String? = null   // Phone number of this device (SIM card)
+    private var apiEndpoint: String = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000"
 
     private var buttonSettings: Button? = null
     private var buttonSend: Button? = null
     private var textView: TextView? = null
+    private var textViewPhoneNo: TextView? = null
+    private var textViewApiEndpoint: TextView? = null
+    private var textViewLogging: TextView? = null
 
-    // use handler to update textview from another thread
+    /* Handler to update textview from another thread */
     private val handler = Handler(Looper.getMainLooper()){
         val bundle = it.data
         val from = bundle.getString("from")
@@ -55,24 +66,45 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
         true
     }
 
+    /* Handler to update textview from another thread */
+    private val loggingHandler = Handler(Looper.getMainLooper()){
+        val bundle = it.data
+        val timestamp = bundle.getString("timestamp")
+        val action = bundle.getString("action")
+        val message = bundle.getString("message")
+        textViewLogging?.text = "> ${timestamp}|${action}:\n${message}"
+        true
+    }
+
     /* SMS */
     private lateinit var binding: ActivityMainBinding
-    private val readPermission = this.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+
+    private val readPermission = this.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        Log.d("MainActivity", "Permission granted: $it")
+    }
 
     /* SMS Receiver */
     private val smsReceiver = object : SMSReceiver(){ }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
+
         instance = this
 
         Log.d("MainActivity", "onCreate")
 
         textView = findViewById(R.id.textView)
-        textView?.text = "SMS Content will be displayed here."
+        textView?.text = getString(R.string.textview_sms_prompt_msg)
+
+        textViewLogging = findViewById(R.id.textViewLogging)
+
+        textViewPhoneNo = findViewById(R.id.textViewPhoneNo)
+
+        textViewApiEndpoint = findViewById(R.id.textViewApiEndpoint)
+        textViewApiEndpoint?.text = apiEndpoint
 
         buttonSettings = findViewById(R.id.buttonSettings);
         buttonSettings?.setOnClickListener {
@@ -84,24 +116,27 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
 
         buttonSend = findViewById(R.id.buttonSend);
         buttonSend?.setOnClickListener {
-            sendPostSmsRequest(it, "0958521505", "Your Exness verification code is: 9999999")
+            sendPostSmsRequest(it, mPhoneNumber, "Your Exness verification code is: 9999999")
+            // sendPostSmsRequest(it, "0958521505", "Your Binance verification code is: 7777777", "http://192.168.1.76:5000/api/v1/exness/sms")
         }
 
-        /* SMS */
-        binding = ActivityMainBinding.inflate(layoutInflater)   // Inflate the layout
+        /* SMS Permission */
+        binding = ActivityMainBinding.inflate(layoutInflater)   // Inflate the layout? What does it mean? https://stackoverflow.com/questions/3482743/what-does-it-mean-to-inflate-a-view-from-an-xml-file
         readPermission.launch(                                  // Request the permissions
             arrayOf(
                 android.Manifest.permission.RECEIVE_SMS,
-                android.Manifest.permission.READ_SMS
+                android.Manifest.permission.READ_SMS,
+
+                android.Manifest.permission.SEND_SMS,
+                android.Manifest.permission.READ_PHONE_NUMBERS,
             )
         )
 
-        /* registering SMSReceiver */
-        val filter = IntentFilter("sms-received")
-        registerReceiver(smsReceiver, filter, RECEIVER_EXPORTED)  // for security reason, it's a must to set the receiver as non-exported
+        /* SMSReceiver */
+        val filter = IntentFilter("sms-received")           // what is this for ? https://developer.android.com/reference/android/content/IntentFilter
+        registerReceiver(smsReceiver, filter, RECEIVER_EXPORTED)   // for security reason, it's a must to set the receiver as non-exported
 
-
-        /* Start the ApiService */
+        /* ApiService */
         val serviceIntent = Intent(this, ApiService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
 
@@ -110,50 +145,59 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
             if (ActivityCompat.checkSelfPermission( this, Manifest.permission.READ_SMS ) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission( this, Manifest.permission.READ_PHONE_NUMBERS ) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission( this, Manifest.permission.READ_PHONE_STATE ) != PackageManager.PERMISSION_GRANTED ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
+
+                // TODO: Consider calling ActivityCompat#requestPermissions
+
+                /*
+                   here to request the missing permissions, and then overriding
+                   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
+                   to handle the case where the user grants the permission. See the documentation for ActivityCompat#requestPermissions for more details.
+
+                */
                 Log.d("MainActivity", "No permission to read phone number")
                 return
             }
+
             tMgr = it as TelephonyManager
             mPhoneNumber = tMgr?.line1Number
+            textViewPhoneNo?.text = mPhoneNumber
 
             Log.d("MainActivity", "Phone Number: $mPhoneNumber")
         }
+
+        /** Set up WorkManager & add job into WorkManager */
+        val heartbeatRequest: WorkRequest =
+            PeriodicWorkRequest.Builder(HeartbeatWorker::class.java, 15, TimeUnit.MINUTES)
+                .build()
+
+        WorkManager.getInstance(this).enqueue(heartbeatRequest)
+    }
+
+    fun getMobileNumber(): String? {
+        return mPhoneNumber
     }
 
     override fun onDestroy() {
-        /* unregister BroadcastReceiver */
+        /** Unregister BroadcastReceiver */
         unregisterReceiver(smsReceiver)
-        super.onDestroy()
 
-        /* Stop the ApiService when the Activity is destroyed */
+        /** Stop the ApiService when the Activity is destroyed */
         val serviceIntent = Intent(this, ApiService::class.java)
         stopService(serviceIntent)
+
+        super.onDestroy()
     }
 
-    override fun onClick(v: View?) {
-        textView?.text = "Hello World!"
-    }
-
-    private fun sendPostSmsRequest(it: View?, from: String, message: String) {
-        val endpoint = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000/api/v1/exness/sms"
+    private fun sendPostSmsRequest(it: View?, from: String?, message: String, endpoint: String = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000/api/v1/exness/sms") {
         val client = OkHttpClient()
-        // yyyy-mm-dd hh:mm:ss
-        val timestamp = java.time.LocalDateTime.now().toString()
+        val timestamp = java.time.LocalDateTime.now().toString()        // yyyy-mm-dd hh:mm:ss
         val json = """
             {
                 "timestamp": "$timestamp",
-                "mobile": "$from",
+                "mobile": "${from?: getMobileNumber()}",
                 "msg": "$message"
             }
-            """.trimIndent()
-            .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+            """.trimIndent().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
         val request = Request.Builder()
             .url(endpoint)
@@ -177,6 +221,7 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
         })
     }
 
+    /** Send GET request
     private fun sendPingRequest(view: View) {
         val endpoint = "http://ec2-3-112-51-9.ap-northeast-1.compute.amazonaws.com:5000/api/v1/exness/ping"
         val client = OkHttpClient()
@@ -197,6 +242,7 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
             }
         })
     }
+     */
 
     /** set textview from another thread */
     fun setTextView(from: String, message: String) {
@@ -206,13 +252,27 @@ class MainActivity : AppCompatActivity () , View.OnClickListener {
                 putString("message", message)
             }
         })
-        playAlertSound()
+        playAlertSoundAndVibrate()
     }
 
-    /* make vibration and specific sound notification */
-    private fun playAlertSound() {
+    /** set logging textview from another thread */
+    fun setLoggingTextView(timestamp: String, action: String, message: String) {
+        loggingHandler.sendMessage(Message().apply {
+            data = Bundle().apply {
+                putString("timestamp", timestamp)
+                putString("action", action)
+                putString("message", message)
+            }
+        })
+    }
+
+    /** Make vibration and sound notification */
+    fun playAlertSoundAndVibrate() {
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         vibrator.vibrate(1000)
+        // disable vibration
+        // vibrator.cancel()
+
         val notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val ringtone = RingtoneManager.getRingtone(applicationContext, notification)
         ringtone.play()
