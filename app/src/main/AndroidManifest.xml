@@ -9,32 +9,30 @@
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-
     <!-- User internet to send Post request -->
     <uses-permission android:name="android.permission.INTERNET" />
-
     <!-- User network state to check if internet is available -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- It's often used for services or tasks that need to continue running even when the device's screen is off,
          such as background tasks, ongoing downloads, or keeping a CPU awake to process data -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
     <!-- Use phone state to get phone number -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <!-- Read mobile numbers -->
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
         cannot be used in Android 11+
         still need user's permission to send SMS in Android 11+
 
-    <uses-permission android:name="android.permission.SEND_SMS" />
+        <uses-permission android:name="android.permission.SEND_SMS" />
     -->
 
-    <!--        android:icon="@mipmap/ic_launcher"-->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -48,7 +46,7 @@
         tools:targetApi="31">
 
         <receiver
-            android:name=".SMSReceiver"
+            android:name=".service.SMSReceiver"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">
@@ -57,13 +55,14 @@
             </intent-filter>
         </receiver>
 
+        <!-- has to be with permission 'FOREGROUND_SERVICE_DATA_SYNC' granted. -->
+        <service android:name=".service.SmsHandlingService" android:foregroundServiceType="dataSync" />
 
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
